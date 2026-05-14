@@ -56,14 +56,14 @@ for (t in define_first_sample:define_final_sample) {
 n_cols <- 2
 n_rows <- ceiling(length(plots) / n_cols)
 
-ggsave(
-  filename = "plots/StdBodyX_grid.pdf",
-  plot     = marrangeGrob(grobs = plots, nrow = n_rows, ncol = n_cols),
-  width    = 10,
-  height   = n_rows * 3
-)
+#ggsave(
+#  filename = "plots/StdBodyX_grid.pdf",
+#  plot     = marrangeGrob(grobs = plots, nrow = n_rows, ncol = n_cols),
+#  width    = 10,
+#  height   = n_rows * 3
+#)
 
-cat(sprintf("  saved %d plots to plots/StdBodyX_grid.pdf\n", length(plots)))
+#cat(sprintf("  saved %d plots to plots/StdBodyX_grid.pdf\n", length(plots)))
 
 ################################################################################
 
