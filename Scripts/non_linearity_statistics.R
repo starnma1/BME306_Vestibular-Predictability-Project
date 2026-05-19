@@ -57,11 +57,11 @@ library(readxl)
 
 samples <- paste0("B", 1:17)
 
-participant_info <- read_excel("Data/Participant_info.xlsx")
+participant_info <- read_excel("../Data/Participant_info.xlsx")
 
 dat_all <- data.frame()
 for (s in samples) {
-  path <- glue("Data/{s}_*/processed/")
+  path <- glue("../Data/{s}_*/processed/")
   files <- Sys.glob(file.path(path, "*_trialResults.xlsx"))
   for (f in files) {
     dat <- readxl::read_excel(f)
@@ -136,4 +136,5 @@ ggplot() +
   geom_line(data = new_dat, aes(x = x, y = predicted),linewidth = 5) + 
   scale_y_continuous(limits = c(0, 10))
 
+plot(predict_response(poly_fit))
 

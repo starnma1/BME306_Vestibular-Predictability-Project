@@ -10,17 +10,16 @@ library(ggpubr)
 ################################################################################
 
 
-sample <- "B13"
-#setwd("Expansion/BME306/")
+sample <- "B17"
+setwd("Expansion/BME306/")
 
 ################################################################################
 
-path <- glue("Data/{sample}_*/processed/")
 files <- Sys.glob(file.path(path, "*_trialResults.xlsx"))
 
 # Start of function, make sure its all run above
 graphical_exploration <- function(sample) {
-  path <- glue("Data/{sample}_*/processed/")
+  path <- glue("../Data/{sample}_*/processed/")
   files <- Sys.glob(file.path(path, "*_trialResults.xlsx"))
   
   dat_all <- data.frame()
@@ -37,7 +36,7 @@ graphical_exploration <- function(sample) {
   mutate_p11 <- function(df) {
     df %>% mutate(p11 = case_when(
       grepl("only_forward", condition)  ~ 1,
-      grepl("only_backward", condition) ~ 0,
+      grepl("only_backward", condition) ~ 1,
       grepl("p11_0.75", condition)      ~ 0.75,
       grepl("p11_0.5", condition)       ~ 0.5,
       grepl("p11_0.25", condition)      ~ 0.25,
