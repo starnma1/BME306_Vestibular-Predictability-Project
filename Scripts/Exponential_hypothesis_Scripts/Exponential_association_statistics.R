@@ -110,13 +110,60 @@ anova(mod.null,
 # Final model
 model <- mod.exp.interactive
 
+###############################################################################
+# MODEL DIAGNOSITCS
+###############################################################################
+
+check_model(model)
+check_predictions(model)
 summary(model)
+
+###############################################################################
+# PREDICTION PLOT 
+###############################################################################
 
 s <- seq(min(dd$pulse), max(dd$pulse), length.out = 100)
 new_data <- predict_response(model, terms = c("pulse [s]", "direction"))
 
-ggplot() + 
-  geom_line(data = new_data, aes(x = x, y = predicted, col = group)) + 
-  geom_ribbon(data = new_data, aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group),
-              alpha = .2)
+direction_colors <- c("backward" = "#4E84C4", "forward" = "#C45E4E")
+direction_labels <- c("backward" = "Backward", "forward" = "Forward")
 
+ggplot() +
+  geom_ribbon(
+    data = new_data,
+    aes(x = x, ymin = conf.low, ymax = conf.high, fill = group),
+    alpha = 0.15
+  ) +
+  geom_line(
+    data = new_data,
+    aes(x = x, y = predicted, color = group),
+    linewidth = 0.8
+  ) +
+  scale_color_manual(values = direction_colors, labels = direction_labels) +
+  scale_fill_manual(values = direction_colors, labels = direction_labels) +
+  scale_x_continuous(breaks = 1:10) +
+  labs(
+    x     = "Pulse number",
+    y     = "Postural deviation (SD)",
+    color = "Direction",
+    fill  = "Direction"
+  ) +
+  theme_classic(base_size = 11, base_family = "serif") +
+  theme(
+    axis.line        = element_line(linewidth = 0.4, color = "grey30"),
+    axis.ticks       = element_line(linewidth = 0.4, color = "grey30"),
+    axis.text        = element_text(color = "grey20", size = 10),
+    axis.title       = element_text(color = "grey10", size = 11),
+    legend.position  = "top",
+    legend.title     = element_text(size = 10),
+    legend.text      = element_text(size = 10),
+    panel.grid.major = element_line(color = "grey92", linewidth = 0.3),
+    panel.grid.minor = element_blank(),
+    plot.margin      = margin(8, 12, 8, 8, "pt")
+  )
+
+# Save the plot
+ggsave(
+  "plots/exponential_forward_backward_adaptability.pdf",
+  width = 88, height = 85, units = "mm",
+)
