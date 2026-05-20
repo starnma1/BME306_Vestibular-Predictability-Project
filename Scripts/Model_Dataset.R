@@ -9,8 +9,8 @@ library(performance)
 library(ggeffects)
 library(readxl)
 
-samples <- paste0("B", 1:17)
-participant_info <- read_excel("../Data/Participant_info.xlsx")
+samples <- paste0("B", 1:20)
+participant_info <- read_excel("Data/Participant_info.xlsx")
 
 ################################################################################
 # DATA LOADING
@@ -19,7 +19,7 @@ participant_info <- read_excel("../Data/Participant_info.xlsx")
 model_dataset <- function(samples, direction) {
   dat_all <- data.frame()
   for (s in samples) {
-    path <- glue("../Data/{s}_*/processed/")
+    path <- glue("Data/{s}_*/processed/")
     files <- Sys.glob(file.path(path, "*_trialResults.xlsx"))
     for (f in files) {
       dat <- readxl::read_excel(f)
@@ -43,7 +43,7 @@ model_dataset <- function(samples, direction) {
   return(dat_all)
 }
 
-model_dataset(samples, 1)
-
+data_to_create <- model_dataset(samples, 0)
+#write.csv(data_to_create, "Data_for_stats/model_dataset_backward.csv", row.names = FALSE)
 
 

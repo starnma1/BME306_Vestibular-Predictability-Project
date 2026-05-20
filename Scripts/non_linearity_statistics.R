@@ -55,13 +55,13 @@ library(readxl)
 # DATA LOADING
 ################################################################################
 
-samples <- paste0("B", 1:17)
+samples <- paste0("B", 1:20)
 
-participant_info <- read_excel("../Data/Participant_info.xlsx")
+participant_info <- read_excel("Data/Participant_info.xlsx")
 
 dat_all <- data.frame()
 for (s in samples) {
-  path <- glue("../Data/{s}_*/processed/")
+  path <- glue("Data/{s}_*/processed/")
   files <- Sys.glob(file.path(path, "*_trialResults.xlsx"))
   for (f in files) {
     dat <- readxl::read_excel(f)
@@ -80,7 +80,7 @@ dat_all <- merge(dat_all, participant_info, by = "sample")
 ################################################################################
 
 dat_model <- dat_all %>%
-  filter(Direction == 1) %>%
+  filter(Direction == 0) %>%
   mutate(p11 = case_when(
     grepl("only_forward", condition)  ~ 1,
     grepl("only_backward", condition) ~ 1,
@@ -112,7 +112,11 @@ anova(null_fit, simple_fit, linear_fit,
       linear_fit_additive, linear_fit_interactive,
       poly_fit, poly_fit_additive,poly_fit_interactive,
       over_fit, test = "Chisq")
-compare_performance(null_fit, simple_fit, linear_fit, poly_fit, over_fit)
+
+compare_performance(null_fit, simple_fit, linear_fit,
+                    linear_fit_additive, linear_fit_interactive,
+                    poly_fit, poly_fit_additive,poly_fit_interactive,
+                    over_fit)
 
 ################################################################################
 # MODEL DIAGNOSTICS (best supported model: linear_fit)
@@ -121,20 +125,20 @@ compare_performance(null_fit, simple_fit, linear_fit, poly_fit, over_fit)
 # participant. 
 ################################################################################
 
-summary(linear_fit)
-check_model(linear_fit)
-check_predictions(linear_fit)
-#plot(predict_response(linear_fit, terms = "p11"))
+summary(poly_fit_additive)
+check_model(poly_fit_additive)
+check_predictions(poly_fit_additive)
+
+################################################################################
+# PREDICTION PLOT
+################################################################################
 
 s <- seq(min(dat_model$p11), max(dat_model$p11), length.out = 100)
+new_dat <- predict_response(poly_fit_additive, terms = "p11 [s]")
 
-new_dat <- predict_response(linear_fit, terms = "p11 [0, 0.25, 0.5, 0.75, 1]")
 
-ggplot() + 
-  geom_point(data = dat_model, aes(x = p11, y = StdBodyX, colour = sample),
-             position = position_jitter(width = .4)) + 
-  geom_line(data = new_dat, aes(x = x, y = predicted),linewidth = 5) + 
-  scale_y_continuous(limits = c(0, 10))
-
-plot(predict_response(poly_fit))
+ggplot(data = new_dat) +
+  geom_smooth(aes(x = x, y = predicted), method = "lm", formula = y ~ poly(x, 2)) +
+  #geom_ribbon(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high), alpha = .05) +
+  theme_bw()
 

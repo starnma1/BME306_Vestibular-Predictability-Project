@@ -3,7 +3,7 @@
 ################################################################################
 
 define_first_sample <- 1
-define_final_sample <- 17
+define_final_sample <- 20
 
 ################################################################################
 
@@ -39,7 +39,7 @@ for (t in define_first_sample:define_final_sample) {
     obj_name <- sub("_trialResults\\.xlsx$", "", basename(f))
     dat      <- read_xlsx(f)
     
-    p <- ggplot(dat, aes(x = StartTime, y = StdBodyX)) +
+    p <- ggplot(dat[1:10,], aes(x = StartTime, y = StdBodyX)) +
       geom_point(color = "steelblue") +
       geom_smooth(method = "glm", color = "red", method.args = list(family = gaussian(link = "log"))) +
       labs(title = obj_name, x = "Start Time", y = "StdBodyX") +
@@ -56,14 +56,14 @@ for (t in define_first_sample:define_final_sample) {
 n_cols <- 2
 n_rows <- ceiling(length(plots) / n_cols)
 
-#ggsave(
-#  filename = "plots/StdBodyX_grid.pdf",
-#  plot     = marrangeGrob(grobs = plots, nrow = n_rows, ncol = n_cols),
-#  width    = 10,
-#  height   = n_rows * 3
-#)
+ggsave(
+  filename = "plots/StdBodyX_grid.pdf",
+  plot     = marrangeGrob(grobs = plots, nrow = n_rows, ncol = n_cols),
+  width    = 10,
+  height   = n_rows * 3
+)
 
-#cat(sprintf("  saved %d plots to plots/StdBodyX_grid.pdf\n", length(plots)))
+cat(sprintf("  saved %d plots to plots/StdBodyX_grid.pdf\n", length(plots)))
 
 ################################################################################
 

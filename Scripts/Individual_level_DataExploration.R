@@ -10,7 +10,7 @@ library(ggpubr)
 ################################################################################
 
 
-sample <- "B17"
+sample <- "B8"
 setwd("Expansion/BME306/")
 
 ################################################################################
@@ -19,7 +19,7 @@ files <- Sys.glob(file.path(path, "*_trialResults.xlsx"))
 
 # Start of function, make sure its all run above
 graphical_exploration <- function(sample) {
-  path <- glue("../Data/{sample}_*/processed/")
+  path <- glue("Data/{sample}_*/processed/")
   files <- Sys.glob(file.path(path, "*_trialResults.xlsx"))
   
   dat_all <- data.frame()
