@@ -1,4 +1,12 @@
 ### Script: Statistical Analysis ###
+### Glossary:
+  
+  # Data Loading
+  # Data Preperation
+  # Model Fitting
+  # Model Diagnostics
+  # Prediction PLotting
+  
 ################################################################################
 # HYPOTHESIS
 # This script tests whether the relationship between p11 (Markov chain transition
@@ -9,39 +17,6 @@
 # smaller body displacement. At intermediate values (p11 = 0.5: maximum
 # unpredictability), adaptation is impaired and displacement is largest. This
 # predicts a upside down U-shaped curve with a peak at p11 = 0.5.
-#
-# DATA & MODEL STRUCTURE
-# Data are trial-level StdBodyX observations from samples B1 to B20, separated
-# by pulse direction (forward: Direction == 1, backward: Direction == 0).
-# A random intercept per sample (1 | sample) accounts for between-subject
-# variability. Five models of increasing complexity were compared via likelihood
-# ratio tests using anova():
-#
-#   null_fit:   intercept only, no effect of p11
-#   simple_fit: fixed linear effect of p11, no random effects
-#   linear_fit: fixed linear effect of p11 + random intercept per sample
-#   poly_fit:   fixed quadratic effect of p11 + random intercept per sample
-#   over_fit:   fixed 4th degree polynomial + random intercept per sample
-#
-# MODEL COMPARISON RESULTS
-#                        Df   AIC   BIC  logLik deviance    Chisq Chi Df Pr(>Chisq)    
-# null_fit                2 12136 12148 -6066.0    12132                               
-# simple_fit              3 12134 12152 -6063.8    12128   4.5242      1   0.033419 *  
-# linear_fit              4 11858 11883 -5925.2    11850 277.1857      1  < 2.2e-16 ***
-# linear_fit_additive     5 11857 11888 -5923.5    11847   3.2706      1   0.070534 .  
-# poly_fit                5 11860 11891 -5925.1    11850   0.0000      0   1.000000    
-# linear_fit_interactive  6 11854 11891 -5920.7    11842   8.6712      1   0.003233 ** 
-# poly_fit_additive       6 11859 11896 -5923.4    11847   0.0000      0   1.000000    
-# over_fit                7 11858 11901 -5921.9    11844   3.1775      1   0.074658 .  
-# poly_fit_interactive    8 11857 11907 -5920.6    11841   2.4377      1   0.118446    
-
-# CONCLUSION
-# The analysis does not support the hypothesis of a U-shaped relationship
-# between p11 and balance disruption. The dominant source of variance is
-# between-subject differences rather than the p11 manipulation. The best
-# supported model is the linear mixed model (linear_fit), suggesting at most
-# a weak linear trend of p11 on StdBodyX after accounting for subject-level
-# baseline differences.
 ################################################################################
 
 library(tidyverse)
@@ -94,15 +69,32 @@ dat_model <- dat_all %>%
 # MODEL FITTING
 ################################################################################
 
-null_fit   <-             glmmTMB(StdBodyX ~ 1,                                    data = dat_model)
-simple_fit <-             glmmTMB(StdBodyX ~ p11,                                  data = dat_model)
-linear_fit <-             glmmTMB(StdBodyX ~ p11 + (1 | sample),                   data = dat_model)
-linear_fit_additive <-    glmmTMB(StdBodyX ~ p11 + Height + (1 | sample),          data = dat_model)
-linear_fit_interactive <- glmmTMB(StdBodyX ~ p11 * Height + (1 | sample),          data = dat_model)
-poly_fit   <-             glmmTMB(StdBodyX ~ poly(p11, 2) + (1 | sample),          data = dat_model)
-poly_fit_additive   <-    glmmTMB(StdBodyX ~ poly(p11, 2) + Height + (1 | sample), data = dat_model)
-poly_fit_interactive <-   glmmTMB(StdBodyX ~ poly(p11, 2) * Height + (1 | sample), data = dat_model)
-over_fit   <-             glmmTMB(StdBodyX ~ poly(p11, 4) + (1 | sample),          data = dat_model)
+null_fit   <-             glmmTMB(StdBodyX ~ 1,                                    data = dat_model, family = Gamma(link = "log"))
+simple_fit <-             glmmTMB(StdBodyX ~ p11,                                  data = dat_model, family = Gamma(link = "log"))
+linear_fit <-             glmmTMB(StdBodyX ~ p11 + (1 | sample),                   data = dat_model, family = Gamma(link = "log"))
+linear_fit_additive <-    glmmTMB(StdBodyX ~ p11 + Height + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
+linear_fit_interactive <- glmmTMB(StdBodyX ~ p11 * Height + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
+poly_fit   <-             glmmTMB(StdBodyX ~ poly(p11, 2) + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
+poly_fit_additive   <-    glmmTMB(StdBodyX ~ poly(p11, 2) + Height + (1 | sample), data = dat_mode, family = Gamma(link = "log"))
+poly_fit_interactive <-   glmmTMB(StdBodyX ~ poly(p11, 2) * Height + (1 | sample), data = dat_model, family = Gamma(link = "log"))
+over_fit   <-             glmmTMB(StdBodyX ~ poly(p11, 4) + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
+
+## Using data but each samples median
+
+median_data <- dat_model %>%
+  group_by(sample, p11) %>%
+  summarise(med = median(StdBodyX), Height = mean(Height))
+
+median_null_fit   <-             glmmTMB(median ~ 1,                                    data = median_data, family = Gamma(link = "log"))
+median_simple_fit <-             glmmTMB(median ~ p11,                                  data = median_data, family = Gamma(link = "log"))
+median_linear_fit <-             glmmTMB(median ~ p11 + (1 | sample),                   data = median_data, family = Gamma(link = "log"))
+median_linear_fit_additive <-    glmmTMB(median ~ p11 + Height + (1 | sample),          data = median_data, family = Gamma(link = "log"))
+median_linear_fit_interactive <- glmmTMB(median ~ p11 * Height + (1 | sample),          data = median_data, family = Gamma(link = "log"))
+median_poly_fit   <-             glmmTMB(median ~ poly(p11, 2) + (1 | sample),          data = median_data, family = Gamma(link = "log"))
+median_poly_fit_additive   <-    glmmTMB(median ~ poly(p11, 2) + Height + (1 | sample), data = median_data, family = Gamma(link = "log"))
+median_poly_fit_interactive <-   glmmTMB(median ~ poly(p11, 2) * Height + (1 | sample), data = median_data, family = Gamma(link = "log"))
+median_over_fit   <-             glmmTMB(median ~ poly(p11, 4) + (1 | sample),          data = median_data, family = Gamma(link = "log"))
+
 
 ################################## ##############################################
 # MODEL COMPARISON
@@ -118,6 +110,14 @@ compare_performance(null_fit, simple_fit, linear_fit,
                     poly_fit, poly_fit_additive,poly_fit_interactive,
                     over_fit)
 
+# Now for just medians
+anova(median_null_fit, median_simple_fit, median_linear_fit,
+      median_linear_fit_additive, median_linear_fit_interactive,
+      median_poly_fit, median_poly_fit_additive,median_poly_fit_interactive,
+      median_over_fit, test = "Chisq")
+
+summary(median_poly_fit_additive)
+
 ################################################################################
 # MODEL DIAGNOSTICS (best supported model: linear_fit)
 # We will not be continuing with the interactive model since it is not as medically
@@ -125,20 +125,67 @@ compare_performance(null_fit, simple_fit, linear_fit,
 # participant. 
 ################################################################################
 
-summary(poly_fit_additive)
-check_model(poly_fit_additive)
-check_predictions(poly_fit_additive)
+summary(poly_fit)
+check_model(poly_fit)
+check_predictions(poly_fit)
 
 ################################################################################
 # PREDICTION PLOT
 ################################################################################
 
-s <- seq(min(dat_model$p11), max(dat_model$p11), length.out = 100)
-new_dat <- predict_response(poly_fit_additive, terms = "p11 [s]")
 
+prediction_plot <- function(raw_data, model, outcome_variable,
+                            x_label = "Predictability",
+                            y_label = "Outcome") {
+  
+  s <- seq(min(raw_data$p11), max(raw_data$p11), length.out = 200)
+  new_dat <- predict_response(model, terms = "p11 [s]")
+  
+  ggplot() +
+    geom_ribbon(
+      data = new_dat,
+      aes(x = x, ymin = conf.low, ymax = conf.high),
+      fill = "#4E84C4", alpha = 0.15
+    ) +
+    geom_line(
+      data = new_dat,
+      aes(x = x, y = predicted),
+      color = "#4E84C4", linewidth = 0.8
+    ) +
+    geom_point(
+      data = raw_data,
+      aes(x = p11, y = {{ outcome_variable }}),
+      shape = 21,
+      fill = "#4E84C4", color = "white",
+      size = 2, stroke = 0.4,
+      alpha = 0.7,
+      position = position_jitter(width = 0.01, seed = 42)
+    ) +
+    labs(
+      x = x_label,
+      y = y_label
+    ) +
+    theme_classic(base_size = 11, base_family = "serif") +
+    theme(
+      axis.line        = element_line(linewidth = 0.4, color = "grey30"),
+      axis.ticks       = element_line(linewidth = 0.4, color = "grey30"),
+      axis.text        = element_text(color = "grey20", size = 10),
+      axis.title       = element_text(color = "grey10", size = 11),
+      panel.grid.major = element_line(color = "grey92", linewidth = 0.3),
+      panel.grid.minor = element_blank(),
+      plot.margin      = margin(8, 12, 8, 8, "pt")
+    )
+}
 
-ggplot(data = new_dat) +
-  geom_smooth(aes(x = x, y = predicted), method = "lm", formula = y ~ poly(x, 2)) +
-  #geom_ribbon(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high), alpha = .05) +
-  theme_bw()
+# Call the function to view the plot
+prediction_plot(
+  median_data, poly_fit_additive, med,
+  x_label = "Predictability Score (p11, p00)",
+  y_label = "Median Body Displacement (StdBodyX)"
+)
 
+# Save the plot
+ggsave(
+  "plots/non_linearity_prediction.pdf",
+  width = 88, height = 85, units = "mm",
+)
