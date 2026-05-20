@@ -1,4 +1,9 @@
 # Script to make a dataset for learning effect analysis #
+# 
+# To create the dataset just select all and run the script.
+# It will read all the data, create new folders for each 
+# participant with the learning data, and then compile all 
+# the median body x values into one dataset for analysis.
 
 ###############################################################################
 
@@ -45,25 +50,44 @@ for (participant in 1:20) {
 
 # Compile all those files into one dataset, using only the median from each trial
 
-all_data <- list()
-
-for (participant in 1:20) {
-  path   <- "Data/"
-  sample <- paste0("B", participant)
-  folder <- Sys.glob(glue("{path}{sample}_*/Learning_Data"))
-  files <- list.files(folder, pattern = "^[^~].*\\.xlsx$", full.names = TRUE)
-  for (f in files){
-    frame_name <- sub("\\.xlsx$", "", basename(f))
-    prelim_read <- read_excel(f)
-    print(sample)
-    print(colnames(prelim_read))
-    dat <- data.frame(
-      sample = sample,
-      trial = frame_name,
-      median_body_x = median(prelim_read$StdBodyX) # Assuming the median is in the 5th row
+compile_learning_data <- function(n_rows = NULL, exclude_participants = 11) {
+  
+  all_data <- list()
+  
+  for (participant in 1:20) {
+    if (participant %in% exclude_participants) next
+    path   <- "Data/"
+    sample <- paste0("B", participant)
+    folder <- Sys.glob(glue("{path}{sample}_*/Learning_Data"))
+    files <- list.files(folder, pattern = "^[^~].*\\.xlsx$", full.names = TRUE)
+    for (f in files){
+      frame_name <- sub("\\.xlsx$", "", basename(f))
+      prelim_read <- read_excel(f)
+      if (!is.null(n_rows)) prelim_read <- prelim_read[1:min(n_rows, nrow(prelim_read)), ]
+      print(sample)
+      print(colnames(prelim_read))
+      dat <- prelim_read %>%
+        group_by(Direction) %>%
+        summarise(median_body_x = median(StdBodyX))
+      
+      final_dat <- data.frame(
+        sample = sample,
+        trial = frame_name,
+        median_body_x = dat$median_body_x,
+        direction = dat$Direction
       )
-      all_data <- append(all_data, list(dat))
+      all_data <- c(all_data, list(final_dat))
     }
   }
+  
+  bind_rows(all_data)
+}
+
+# Data set complete
+learning_curve_data <- compile_learning_data(n_rows = 10)
+
+
+#write.csv(learning_curve_data, "Data_for_stats/learning_curve_data.csv", row.names = FALSE)
+#write.csv(learning_curve_data, "Data_for_stats/learning_curve_data_only_first10.csv", row.names = FALSE)
 
 
