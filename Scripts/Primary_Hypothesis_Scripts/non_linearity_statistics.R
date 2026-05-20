@@ -75,7 +75,7 @@ linear_fit <-             glmmTMB(StdBodyX ~ p11 + (1 | sample),                
 linear_fit_additive <-    glmmTMB(StdBodyX ~ p11 + Height + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
 linear_fit_interactive <- glmmTMB(StdBodyX ~ p11 * Height + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
 poly_fit   <-             glmmTMB(StdBodyX ~ poly(p11, 2) + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
-poly_fit_additive   <-    glmmTMB(StdBodyX ~ poly(p11, 2) + Height + (1 | sample), data = dat_mode, family = Gamma(link = "log"))
+poly_fit_additive   <-    glmmTMB(StdBodyX ~ poly(p11, 2) + Height + (1 | sample), data = dat_model, family = Gamma(link = "log"))
 poly_fit_interactive <-   glmmTMB(StdBodyX ~ poly(p11, 2) * Height + (1 | sample), data = dat_model, family = Gamma(link = "log"))
 over_fit   <-             glmmTMB(StdBodyX ~ poly(p11, 4) + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
 
