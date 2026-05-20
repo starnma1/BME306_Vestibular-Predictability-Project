@@ -29,25 +29,94 @@ library(readxl)
 ###############################################################################
 
 # Complete data frame
-dd <- data.frame()
+path <- "Data/"
+all_data <- list()
 
-for (sample in 1:20) {
-  path <- "Data/"
-  sample           <- glue("B{sample}")
-  folder           <- Sys.glob(glue("{path}{sample}_*"))
-  
-  
+for (i in 1:20) {
+  sample_id        <- glue("B{i}")
+  folder           <- Sys.glob(glue("{path}{sample_id}_*"))
   processed_folder <- file.path(folder, "processed")
-  files            <- list.files(processed_folder, 
-                                 pattern = "(only_forward|only_backward).*_trialResults\\.xlsx$", 
-                                 full.names = TRUE)
-  for (f in files) {
-    obj_name <- sub("_trialResults\\.xlsx$", "", basename(f))
-    dat      <- read_xlsx(f)
-    dat      <- dat[1:10,]
-    
-    # Append the dat into the overarching dd dataframe
-    dd <- rbind(dd, dat)
-  }
-}  
   
+  files <- list.files(processed_folder,
+                      pattern = "(only_forward|only_backward).*_trialResults\\.xlsx$",
+                      full.names = TRUE)
+  
+  for (f in files) {
+    obj_name  <- sub("_trialResults\\.xlsx$", "", basename(f))
+    direction <- ifelse(grepl("only_forward", basename(f)), "forward", "backward")
+    
+    dat            <- read_xlsx(f)
+    dat            <- dat[1:10, ]
+    dat$sample     <- sample_id
+    dat$direction  <- direction
+    dat$pulse      <- 1:10
+    
+    all_data[[length(all_data) + 1]] <- dat
+  }
+}
+
+# Final ready dataset for analysis
+dd <- bind_rows(all_data)
+
+glimpse(dd)
+
+###############################################################################
+# DATA EXPLORATION (QUICK)
+###############################################################################
+
+ggplot(data = dd) + 
+  geom_density(aes(x = StdBodyX, group = Direction, col = factor(Direction))) + 
+  facet_wrap(~sample)
+  
+  # This suggests a underlying gamma distribution
+
+###############################################################################
+# MODEL FITTING
+###############################################################################
+
+mod.null <- glmmTMB(StdBodyX ~ 1, data = dd, family = Gamma(link = "log"))
+mod.only.subject <- glmmTMB(StdBodyX ~ 1 + (1| sample), data = dd, family = Gamma(link = "log"))
+mod.simple <- glmmTMB(StdBodyX ~ pulse + (1|sample), data = dd, family = Gamma(link = "log"))
+mod.simple.additive <- glmmTMB(StdBodyX ~ pulse + direction + (1|sample), data = dd, family = Gamma(link = "log"))
+mod.simple.interactive <- glmmTMB(StdBodyX ~ pulse * direction + (1|sample), data = dd, family = Gamma(link = "log"))
+
+
+# The log link already models exponential decay, but log(pulse) as predictor
+# tests whether the decay follows a power law (faster initial drop, slower tail)
+# which is a common alternative to pure exponential
+mod.exp.additive <- glmmTMB(StdBodyX ~ log(pulse) + direction + (1|sample),
+                            data = dd, family = Gamma(link = "log"))
+
+mod.exp.interactive <- glmmTMB(StdBodyX ~ log(pulse) * direction + (1|sample),
+                               data = dd, family = Gamma(link = "log"))
+
+# Random slope over log(pulse) per subject — allows individuals to differ
+# in how fast they adapt, not just where they start
+mod.exp.random.slope <- glmmTMB(StdBodyX ~ log(pulse) * direction + (1 + log(pulse) | sample),
+                                data = dd, family = Gamma(link = "log"))
+
+# Model comparison
+anova(mod.null,
+    mod.only.subject,
+    mod.simple,
+    mod.simple.additive,
+    mod.simple.interactive,
+    mod.exp.additive,
+    mod.exp.interactive,
+    mod.exp.random.slope, 
+    test = "Chisq")
+
+
+# Final model
+model <- mod.exp.interactive
+
+summary(model)
+
+s <- seq(min(dd$pulse), max(dd$pulse), length.out = 100)
+new_data <- predict_response(model, terms = c("pulse [s]", "direction"))
+
+ggplot() + 
+  geom_line(data = new_data, aes(x = x, y = predicted, col = group)) + 
+  geom_ribbon(data = new_data, aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group),
+              alpha = .2)
+
