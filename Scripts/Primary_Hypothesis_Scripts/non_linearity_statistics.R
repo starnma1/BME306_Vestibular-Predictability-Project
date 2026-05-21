@@ -1,4 +1,10 @@
 ### Script: Statistical Analysis ###
+
+### The current script is evaluating backward direction only !!!!
+
+  # Change the direction here to do the diff analysis
+  direction <- 1
+
 ### Glossary:
   
   # Data Loading
@@ -55,7 +61,7 @@ dat_all <- merge(dat_all, participant_info, by = "sample")
 ################################################################################
 
 dat_model <- dat_all %>%
-  filter(Direction == 0) %>%
+  filter(Direction == direction) %>%
   mutate(p11 = case_when(
     grepl("only_forward", condition)  ~ 1,
     grepl("only_backward", condition) ~ 1,
@@ -75,25 +81,25 @@ linear_fit <-             glmmTMB(StdBodyX ~ p11 + (1 | sample),                
 linear_fit_additive <-    glmmTMB(StdBodyX ~ p11 + Height + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
 linear_fit_interactive <- glmmTMB(StdBodyX ~ p11 * Height + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
 poly_fit   <-             glmmTMB(StdBodyX ~ poly(p11, 2) + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
-poly_fit_additive   <-    glmmTMB(StdBodyX ~ poly(p11, 2) + Height + (1 | sample), data = dat_mode, family = Gamma(link = "log"))
+poly_fit_additive   <-    glmmTMB(StdBodyX ~ poly(p11, 2) + Height + (1 | sample), data = dat_model, family = Gamma(link = "log"))
 poly_fit_interactive <-   glmmTMB(StdBodyX ~ poly(p11, 2) * Height + (1 | sample), data = dat_model, family = Gamma(link = "log"))
 over_fit   <-             glmmTMB(StdBodyX ~ poly(p11, 4) + (1 | sample),          data = dat_model, family = Gamma(link = "log"))
 
 ## Using data but each samples median
 
-median_data <- dat_model %>%
-  group_by(sample, p11) %>%
-  summarise(med = median(StdBodyX), Height = mean(Height))
+#median_data <- dat_model %>%
+#  group_by(sample, p11) %>%
+#  summarise(med = median(StdBodyX), Height = mean(Height))
 
-median_null_fit   <-             glmmTMB(median ~ 1,                                    data = median_data, family = Gamma(link = "log"))
-median_simple_fit <-             glmmTMB(median ~ p11,                                  data = median_data, family = Gamma(link = "log"))
-median_linear_fit <-             glmmTMB(median ~ p11 + (1 | sample),                   data = median_data, family = Gamma(link = "log"))
-median_linear_fit_additive <-    glmmTMB(median ~ p11 + Height + (1 | sample),          data = median_data, family = Gamma(link = "log"))
-median_linear_fit_interactive <- glmmTMB(median ~ p11 * Height + (1 | sample),          data = median_data, family = Gamma(link = "log"))
-median_poly_fit   <-             glmmTMB(median ~ poly(p11, 2) + (1 | sample),          data = median_data, family = Gamma(link = "log"))
-median_poly_fit_additive   <-    glmmTMB(median ~ poly(p11, 2) + Height + (1 | sample), data = median_data, family = Gamma(link = "log"))
-median_poly_fit_interactive <-   glmmTMB(median ~ poly(p11, 2) * Height + (1 | sample), data = median_data, family = Gamma(link = "log"))
-median_over_fit   <-             glmmTMB(median ~ poly(p11, 4) + (1 | sample),          data = median_data, family = Gamma(link = "log"))
+#median_null_fit   <-             glmmTMB(median ~ 1,                                    data = median_data, family = Gamma(link = "log"))
+#median_simple_fit <-             glmmTMB(median ~ p11,                                  data = median_data, family = Gamma(link = "log"))
+#median_linear_fit <-             glmmTMB(median ~ p11 + (1 | sample),                   data = median_data, family = Gamma(link = "log"))
+#median_linear_fit_additive <-    glmmTMB(median ~ p11 + Height + (1 | sample),          data = median_data, family = Gamma(link = "log"))
+#median_linear_fit_interactive <- glmmTMB(median ~ p11 * Height + (1 | sample),          data = median_data, family = Gamma(link = "log"))
+#median_poly_fit   <-             glmmTMB(median ~ poly(p11, 2) + (1 | sample),          data = median_data, family = Gamma(link = "log"))
+#median_poly_fit_additive   <-    glmmTMB(median ~ poly(p11, 2) + Height + (1 | sample), data = median_data, family = Gamma(link = "log"))
+#median_poly_fit_interactive <-   glmmTMB(median ~ poly(p11, 2) * Height + (1 | sample), data = median_data, family = Gamma(link = "log"))
+#median_over_fit   <-             glmmTMB(median ~ poly(p11, 4) + (1 | sample),          data = median_data, family = Gamma(link = "log"))
 
 
 ################################## ##############################################
@@ -111,23 +117,20 @@ compare_performance(null_fit, simple_fit, linear_fit,
                     over_fit)
 
 # Now for just medians
-anova(median_null_fit, median_simple_fit, median_linear_fit,
-      median_linear_fit_additive, median_linear_fit_interactive,
-      median_poly_fit, median_poly_fit_additive,median_poly_fit_interactive,
-      median_over_fit, test = "Chisq")
+#anova(median_null_fit, median_simple_fit, median_linear_fit,
+#      median_linear_fit_additive, median_linear_fit_interactive,
+#      median_poly_fit, median_poly_fit_additive,median_poly_fit_interactive,
+#      median_over_fit, test = "Chisq")
 
-summary(median_poly_fit_additive)
+#summary(poly_fit_additive)
 
 ################################################################################
-# MODEL DIAGNOSTICS (best supported model: linear_fit)
-# We will not be continuing with the interactive model since it is not as medically
-# sensible to assume the effect of predictability depends on the height of the 
-# participant. 
+# MODEL DIAGNOSTICS 
 ################################################################################
 
-summary(poly_fit)
-check_model(poly_fit)
-check_predictions(poly_fit)
+summary(poly_fit_additive)
+check_model(poly_fit_additive)
+check_predictions(poly_fit_additive)
 
 ################################################################################
 # PREDICTION PLOT
@@ -136,7 +139,8 @@ check_predictions(poly_fit)
 
 prediction_plot <- function(raw_data, model, outcome_variable,
                             x_label = "Predictability",
-                            y_label = "Outcome") {
+                            y_label = "Outcome",
+                            title = "Forward Movement") {
   
   s <- seq(min(raw_data$p11), max(raw_data$p11), length.out = 200)
   new_dat <- predict_response(model, terms = "p11 [s]")
@@ -163,14 +167,16 @@ prediction_plot <- function(raw_data, model, outcome_variable,
     ) +
     labs(
       x = x_label,
-      y = y_label
+      y = y_label,
+      title = title
     ) +
     theme_classic(base_size = 11, base_family = "serif") +
     theme(
+      plot.title = element_text(size = 9, hjust = 0.5, lineheight = 1.2),
       axis.line        = element_line(linewidth = 0.4, color = "grey30"),
       axis.ticks       = element_line(linewidth = 0.4, color = "grey30"),
-      axis.text        = element_text(color = "grey20", size = 10),
-      axis.title       = element_text(color = "grey10", size = 11),
+      axis.text        = element_text(color = "grey20", size = 8),
+      axis.title       = element_text(color = "grey10", size = 9),
       panel.grid.major = element_line(color = "grey92", linewidth = 0.3),
       panel.grid.minor = element_blank(),
       plot.margin      = margin(8, 12, 8, 8, "pt")
@@ -181,11 +187,11 @@ prediction_plot <- function(raw_data, model, outcome_variable,
 prediction_plot(
   median_data, poly_fit_additive, med,
   x_label = "Predictability Score (p11, p00)",
-  y_label = "Median Body Displacement (StdBodyX)"
+  y_label = "Median Body Displacement (SD)"
 )
 
 # Save the plot
 ggsave(
-  "plots/non_linearity_prediction.pdf",
+  "plots/non_linearity_prediction_FORWARDS.pdf",
   width = 88, height = 85, units = "mm",
 )

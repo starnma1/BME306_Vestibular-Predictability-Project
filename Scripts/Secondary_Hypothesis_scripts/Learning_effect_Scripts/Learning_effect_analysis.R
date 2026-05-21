@@ -35,11 +35,13 @@ library(ggpubr)
 
 participant_info <- read_excel("Data/Participant_info.xlsx")
 
-dat_full <- read.csv("Data_for_stats/learning_curve_data.csv")
-dat_first_10 <- read.csv("Data_for_stats/learning_curve_data_only_first10.csv")
+dat_full <- read.csv("Created_Datasets/learning_curve_data.csv")
+dat_first_10 <- read.csv("Created_Datasets/learning_curve_data_only_first10.csv")
 
 dat_full <- merge(dat_full, participant_info, by = "sample")
 dat_first_10 <- merge(dat_first_10, participant_info, by = "sample")
+
+table(dat_full$direction)
 
 str(dat_full)
 str(dat_first_10)
@@ -53,6 +55,8 @@ data_wrangling <- function(data){
 
 dat_full <- data_wrangling(dat_full)
 dat_first_10 <- data_wrangling(dat_first_10)
+
+table(dat_full$direction)
 
 ################################################################################
 # DATA EXPLORATION (QUICK)
@@ -154,6 +158,7 @@ new_data_first_10 <- predict_response(best_model_first_10,
                                       bias_correction = TRUE)
 
 plot_prediction <- function(new_data, raw_data, title) {
+  new_data$x <- as.numeric(as.character(new_data$x))
   ggplot() +
     geom_ribbon(
       data = new_data,
@@ -177,7 +182,7 @@ plot_prediction <- function(new_data, raw_data, title) {
     labs(
       title  = title,
       x      = "Trial number",
-      y      = "Body deviation from static posture (SD)",
+      y      = "Median Body Displacement (SD)",
       color  = "Direction",
       fill   = "Direction"
     ) +
