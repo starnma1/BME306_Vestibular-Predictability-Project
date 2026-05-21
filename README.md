@@ -2,6 +2,8 @@
 
 This repository contains all scripts, datasets, and outputs for the BME306 course report on vestibular adaptation to galvanic vestibular stimulation (GVS) delivered according to a Markov chain framework.
 
+The FORWARD direction is valued at 1, the BACKWARD direction is 0.
+
 ---
 
 ## Repository Structure
